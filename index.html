@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小恐龍雄女ver.</title>
+    <title>我的專屬自訂跑酷遊戲</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         body {
@@ -24,6 +24,7 @@
             background-color: transparent; 
             overflow: hidden;
             border: 4px solid #fff;
+            cursor: pointer; /* 讓玩家知道這裡可以點擊 */
         }
 
         .cloud {
@@ -113,13 +114,13 @@
         .paper-plane.mid { bottom: 105px; } 
         .paper-plane.low { bottom: 0px; }    
 
-        /* 💡 分數面板改為像素風：縮小一點字體（16px），因為像素字體通常偏大 */
+        /* 分數面板像素風 */
         #score {
             position: absolute;
             top: 20px;
             right: 20px;
             font-size: 16px;
-            color: #fff; /* 改成白色，配上黑陰影更像街機風 */
+            color: #fff; 
             z-index: 30;
             text-shadow: 3px 3px 0px #000;
         }
@@ -131,24 +132,24 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.75); /* 改成黑底透明，像素風的死亡畫面更有感 */
+            background-color: rgba(0, 0, 0, 0.75); 
             z-index: 50;
             justify-content: center;
             align-items: center;
             flex-direction: column;
         }
         
-        /* 💡 GAME OVER 像素風字體 */
+        /* GAME OVER 像素風字體 */
         #game-over-text {
             font-size: 36px;
-            color: #ff3333; /* 亮紅色 */
+            color: #ff3333; 
             margin-bottom: 30px;
             text-shadow: 4px 4px 0px #000;
         }
         
-        /* 💡 重新開始按鈕改為像素風格 */
+        /* 重新開始按鈕 */
         #restart-button {
-            font-family: 'Press Start 2P', monospace; /* 確保按鈕也是像素字 */
+            font-family: 'Press Start 2P', monospace; 
             padding: 12px 24px;
             font-size: 14px;
             background-color: #fff;
@@ -162,7 +163,7 @@
             transform: translate(3px, 3px);
         }
 
-        /* 💡 開始畫面像素風微調（由於此字體不支援中文，中文會自動套用新細明體，所以我另外幫你調整了標題層次） */
+        /* 開始畫面：💡 這裡已將黃色的字改為純白色 */
         #start-screen {
             position: absolute;
             top: 0;
@@ -184,11 +185,13 @@
             font-size: 20px;
             line-height: 1.6;
             margin-bottom: 15px;
-            color: #ffcc00;
+            color: #ffffff; /* 💡 修改為純白色 */
+            text-shadow: 3px 3px 0px #000; /* 加入像素風黑色陰影 */
         }
         #start-screen p {
             font-size: 14px;
             color: #ccc;
+            text-shadow: 2px 2px 0px #000;
         }
     </style>
 </head>
@@ -212,6 +215,8 @@
     </div>
 
     <script>
+        window.focus(); // 💡 網頁載入時強制聚焦，避免鍵盤按鍵失效
+
         const container = document.getElementById('game-container');
         const dino = document.getElementById('dino');
         const ground = document.getElementById('ground');
@@ -245,6 +250,7 @@
 
         function startGame() {
             if (isGameStarted) return;
+            window.focus(); // 確保開始時焦點在網頁內
             isGameStarted = true;
             isRunning = true;
             startScreen.style.display = 'none';
@@ -252,25 +258,34 @@
             gameLoop();
         }
 
+        // 監聽鍵盤按下
         document.addEventListener('keydown', (e) => {
-            if (!isGameStarted && (e.code === 'Space' || e.key === ' ' || e.code === 'ArrowUp')) {
-                startGame();
-                return;
+            // 💡 如果遊戲還沒開始，按空白鍵或上方向鍵都可以直接觸發開始
+            if (!isGameStarted) {
+                if (e.code === 'Space' || e.key === ' ' || e.code === 'ArrowUp' || e.key === 'ArrowUp') {
+                    startGame();
+                    e.preventDefault(); // 防止空白鍵讓網頁滾動
+                    return;
+                }
             }
+            
             if (!isRunning) return;
             
-            if ((e.code === 'Space' || e.key === ' ' || e.code === 'ArrowUp')) {
+            if (e.code === 'Space' || e.key === ' ' || e.code === 'ArrowUp' || e.key === 'ArrowUp') {
                 if (!isJumping && !isDucking) {
                     isJumping = true;
                     dinoVelocityY = JUMP_FORCE;
                 }
+                e.preventDefault();
             }
             if ((e.code === 'ArrowDown' || e.key === 'ArrowDown') && !isJumping && !isDucking) {
                 isDucking = true;
                 dino.classList.add('duck'); 
+                e.preventDefault();
             }
         });
 
+        // 監聽鍵盤放開
         document.addEventListener('keyup', (e) => {
             if (!isRunning) return;
             if (e.code === 'ArrowDown' || e.key === 'ArrowDown') {
@@ -279,7 +294,12 @@
             }
         });
 
-        startScreen.addEventListener('click', startGame);
+        // 💡 點擊整個遊戲畫面都可以直接開始遊戲
+        container.addEventListener('click', () => {
+            if (!isGameStarted) {
+                startGame();
+            }
+        });
 
         function gameLoop() {
             if (!isRunning) return;
@@ -409,4 +429,74 @@
                 const obsRect = obs.element.getBoundingClientRect();
                 const obsCollision = {
                     left: obsRect.left + 8,
-                    right: obsRect.right - 8
+                    right: obsRect.right - 8,
+                    top: obsRect.top + 8,
+                    bottom: obsRect.bottom - 5
+                };
+
+                if (dinoCollision.left < obsCollision.right &&
+                    dinoCollision.right > obsCollision.left &&
+                    dinoCollision.top < obsCollision.bottom &&
+                    dinoCollision.bottom > obsCollision.top) {
+                    endGame();
+                    return;
+                }
+            }
+        }
+
+        function endGame() {
+            isRunning = false;
+            ground.classList.remove('moving-ground'); 
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function resetGame() {
+            isRunning = true;
+            gameOverScreen.style.display = 'none';
+            ground.classList.add('moving-ground');
+            score = 0;
+            speed = 6;
+            
+            obstacles = [];
+            obstacleContainer.innerHTML = '';
+            clouds.forEach(c => container.removeChild(c.element));
+            clouds = [];
+            
+            dinoBottom = DINO_INITIAL_BOTTOM;
+            dinoVelocityY = 0;
+            dino.className = 'run-pose-1'; 
+            currentPose = 1;
+            animationFrameCount = 0;
+            isJumping = false;
+            isDucking = false;
+            nextObstacleTime = 0;
+            nextCloudTime = 0;
+            
+            gameLoop();
+        }
+
+        function updateScore() {
+            score++;
+            const scoreStr = String(Math.floor(score / 10)).padStart(5, '0');
+            scoreElement.innerText = 'SCORE:' + scoreStr;
+            if (score % 500 === 0 && speed < 14) {
+                speed += 0.5;
+            }
+        }
+
+        // 💡 防止點擊 RESTART 按鈕時，冒泡事件重複觸發 container 的點擊事件
+        restartButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            resetGame();
+        });
+        
+        const initialCloud = document.createElement('div');
+        initialCloud.classList.add('cloud');
+        initialCloud.style.top = '50px';
+        initialCloud.style.left = '400px';
+        container.appendChild(initialCloud);
+        clouds.push({ element: initialCloud, x: 400 });
+
+    </script>
+</body>
+</html>
