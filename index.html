@@ -19,7 +19,7 @@
         #game-container {
             position: relative;
             width: 800px;
-            height: 350px; 
+            height: 350px; /* 稍微加高遊戲畫面，容納放大後的物件 */
             background-color: transparent; 
             overflow: hidden;
             border: 4px solid #fff;
@@ -54,29 +54,25 @@
             animation: scrollGround 3s linear infinite;
         }
 
-        /* --- 主角基礎尺寸 (100x150) --- */
+        /* --- 主角 站立 狀態 (100x150) --- */
         #dino {
             position: absolute;
             bottom: 40px; 
             left: 50px;
             width: 100px;  
             height: 150px; 
+            background-image: url('image_1.png');
             background-size: contain; 
             background-repeat: no-repeat;
             background-position: center bottom;
             z-index: 20;
         }
 
-        /* 💡 這裡幫你把三個狀態都設定好囉！ */
-        #dino.run-pose-1 { background-image: url('run1.png'); }
-        #dino.run-pose-2 { background-image: url('run2.png'); }
-        #dino.run-pose-3 { background-image: url('run3.png'); } /* 👈 新增的第3個姿勢 */
-
-        /* 躺平狀態 (100x95) */
+        /* --- 💡 主角 躺平 狀態放大！(100x95) --- */
         #dino.duck {
             width: 100px;
             height: 95px; 
-            background-image: url('duck.png') !important; 
+            background-image: url('image_2.png');
         }
 
         #obstacle-container {
@@ -88,7 +84,7 @@
             z-index: 15;
         }
 
-        /* 書本尺寸 (85x100) */
+        /* --- 💡 書本尺寸全面放大 (85x100) --- */
         .book {
             position: absolute;
             bottom: 0;
@@ -99,7 +95,7 @@
             background-position: center bottom;
         }
 
-        /* 紙飛機尺寸 (90x55) */
+        /* --- 💡 紙飛機尺寸全面放大 (90x55) --- */
         .paper-plane {
             position: absolute;
             width: 90px;  
@@ -109,6 +105,7 @@
             background-repeat: no-repeat;
             background-position: center center;
         }
+        /* 配合整體放大，微調飛機的飛行高度 */
         .paper-plane.high { bottom: 180px; } 
         .paper-plane.mid { bottom: 115px; } 
         .paper-plane.low { bottom: 40px; } 
@@ -174,7 +171,7 @@
     <div id="game-container">
         <div id="score">SCORE: 00000</div>
         <div id="ground"></div>
-        <div id="dino" class="run-pose-1"></div>
+        <div id="dino"></div>
         <div id="obstacle-container"></div>
         
         <div id="start-screen">
@@ -199,7 +196,7 @@
         const startScreen = document.getElementById('start-screen');
 
         const GRAVITY = 1.6;          
-        const JUMP_FORCE = -25;       
+        const JUMP_FORCE = -25;       /* 微調跳躍力適應新高度 */
         const DINO_INITIAL_BOTTOM = 40;
         const PLANE_DELAY_SCORE = 150; 
 
@@ -217,11 +214,6 @@
         let nextObstacleTime = 0;
         let nextCloudTime = 0;
 
-        // 💡 三張圖片動畫控制器
-        let animationFrameCount = 0;
-        let currentPose = 1;
-        let animationDirection = 1; // 1代表正向(1->2->3)，-1代表反向(3->2->1)
-
         function startGame() {
             if (isGameStarted) return;
             isGameStarted = true;
@@ -231,6 +223,7 @@
             gameLoop();
         }
 
+        // 鍵盤控制邏輯（方向鍵 ⬆️ 跳躍、⬇️ 躺平）
         document.addEventListener('keydown', (e) => {
             if (!isGameStarted && (e.code === 'Space' || e.key === ' ' || e.code === 'ArrowUp')) {
                 startGame();
@@ -282,35 +275,6 @@
                 }
             }
             dino.style.bottom = `${dinoBottom}px`;
-
-            // 💡 修正：更新三張圖片輪流切換的邏輯 (1 -> 2 -> 3 -> 2 -> 1)
-            if (!isJumping && !isDucking) {
-                animationFrameCount++;
-                if (animationFrameCount >= 8) { // 每 8 幀換一次圖，速度很剛好
-                    animationFrameCount = 0;
-                    
-                    // 移除當前的姿勢 Class
-                    dino.classList.remove(`run-pose-${currentPose}`);
-                    
-                    // 計算下一個姿勢
-                    currentPose += animationDirection;
-                    
-                    // 碰到邊界時折返
-                    if (currentPose === 3) {
-                        animationDirection = -1; // 接下來往回走
-                    } else if (currentPose === 1) {
-                        animationDirection = 1;  // 接下來往前走
-                    }
-                    
-                    // 加上新的姿勢 Class
-                    dino.classList.add(`run-pose-${currentPose}`);
-                }
-            } else if (isJumping) {
-                // 跳躍時固定用姿勢 1
-                dino.className = 'run-pose-1';
-                currentPose = 1;
-                animationDirection = 1;
-            }
         }
 
         function updateClouds() {
@@ -361,10 +325,12 @@
                     bookElement.classList.add('book');
                     bookElement.style.left = '800px';
                     
+                    // 1 到 4 隨機抽籤書本
                     const bookNum = Math.floor(Math.random() * 4) + 1; 
                     bookElement.style.backgroundImage = `url('book${bookNum}.png')`;
                     
                     obstacleContainer.appendChild(bookElement);
+                    // 同步放大碰撞框數據
                     obstacles.push({ element: bookElement, x: 800, width: 85, height: 100, type: 'book' });
                 } else if (obstacleType === 'plane') {
                     const planeElement = document.createElement('div');
@@ -373,15 +339,18 @@
                     planeElement.classList.add(planeLevels[Math.floor(Math.random() * planeLevels.length)]);
                     planeElement.style.left = '800px';
                     obstacleContainer.appendChild(planeElement);
+                    // 同步放大碰撞框數據
                     obstacles.push({ element: planeElement, x: 800, width: 90, height: 55, type: 'plane' });
                 }
 
+                // 稍微拉長大物件的生成間距，避免撞在一起
                 nextObstacleTime = now + (1200 / (speed / 10)) + Math.random() * 1800;
             }
         }
 
         function checkCollisions() {
             const dinoRect = dino.getBoundingClientRect();
+            // 縮減隱形判定框邊緣，讓大圖片玩起來判定依然精準
             const dinoCollision = {
                 left: dinoRect.left + 30,
                 right: dinoRect.right - 30,
@@ -428,10 +397,7 @@
             
             dinoBottom = DINO_INITIAL_BOTTOM;
             dinoVelocityY = 0;
-            dino.className = 'run-pose-1'; 
-            currentPose = 1;
-            animationDirection = 1;
-            animationFrameCount = 0;
+            dino.classList.remove('duck');
             isJumping = false;
             isDucking = false;
             nextObstacleTime = 0;
