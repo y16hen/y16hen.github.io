@@ -54,7 +54,7 @@
             animation: scrollGround 3s linear infinite;
         }
 
-        /* --- 主角基礎尺寸 (100x150) --- */
+        /* 主角基礎設定 */
         #dino {
             position: absolute;
             bottom: 40px; 
@@ -67,16 +67,15 @@
             z-index: 20;
         }
 
-        /* 💡 這裡幫你把三個狀態都設定好囉！ */
+        /* 💡 動態切換跑步姿勢的 CSS Class */
         #dino.run-pose-1 { background-image: url('run1.png'); }
         #dino.run-pose-2 { background-image: url('run2.png'); }
-        #dino.run-pose-3 { background-image: url('run3.png'); } /* 👈 新增的第3個姿勢 */
 
-        /* 躺平狀態 (100x95) */
+        /* 💡 躺平形態 */
         #dino.duck {
             width: 100px;
             height: 95px; 
-            background-image: url('duck.png') !important; 
+            background-image: url('duck.png') !important; /* 強制覆蓋跑步圖 */
         }
 
         #obstacle-container {
@@ -88,7 +87,6 @@
             z-index: 15;
         }
 
-        /* 書本尺寸 (85x100) */
         .book {
             position: absolute;
             bottom: 0;
@@ -99,7 +97,6 @@
             background-position: center bottom;
         }
 
-        /* 紙飛機尺寸 (90x55) */
         .paper-plane {
             position: absolute;
             width: 90px;  
@@ -217,10 +214,9 @@
         let nextObstacleTime = 0;
         let nextCloudTime = 0;
 
-        // 💡 三張圖片動畫控制器
+        // 跑步動畫計時器
         let animationFrameCount = 0;
         let currentPose = 1;
-        let animationDirection = 1; // 1代表正向(1->2->3)，-1代表反向(3->2->1)
 
         function startGame() {
             if (isGameStarted) return;
@@ -271,6 +267,7 @@
         }
 
         function updateDino() {
+            // 處理跳躍物理
             if (isJumping) {
                 dinoVelocityY += GRAVITY;
                 dinoBottom -= dinoVelocityY;
@@ -283,33 +280,26 @@
             }
             dino.style.bottom = `${dinoBottom}px`;
 
-            // 💡 修正：更新三張圖片輪流切換的邏輯 (1 -> 2 -> 3 -> 2 -> 1)
+            // 💡 處理雙腳跑步交替動畫 (在地面上且沒蹲下時才切換)
             if (!isJumping && !isDucking) {
                 animationFrameCount++;
-                if (animationFrameCount >= 8) { // 每 8 幀換一次圖，速度很剛好
+                if (animationFrameCount >= 9) { // 每 9 幀（約 0.15 秒）換一次姿勢
                     animationFrameCount = 0;
-                    
-                    // 移除當前的姿勢 Class
-                    dino.classList.remove(`run-pose-${currentPose}`);
-                    
-                    // 計算下一個姿勢
-                    currentPose += animationDirection;
-                    
-                    // 碰到邊界時折返
-                    if (currentPose === 3) {
-                        animationDirection = -1; // 接下來往回走
-                    } else if (currentPose === 1) {
-                        animationDirection = 1;  // 接下來往前走
+                    if (currentPose === 1) {
+                        dino.classList.remove('run-pose-1');
+                        dino.classList.add('run-pose-2');
+                        currentPose = 2;
+                    } else {
+                        dino.classList.remove('run-pose-2');
+                        dino.classList.add('run-pose-1');
+                        currentPose = 1;
                     }
-                    
-                    // 加上新的姿勢 Class
-                    dino.classList.add(`run-pose-${currentPose}`);
                 }
             } else if (isJumping) {
-                // 跳躍時固定用姿勢 1
-                dino.className = 'run-pose-1';
+                // 跳躍時固定用姿勢 1 
+                dino.classList.remove('run-pose-2');
+                dino.classList.add('run-pose-1');
                 currentPose = 1;
-                animationDirection = 1;
             }
         }
 
@@ -428,9 +418,8 @@
             
             dinoBottom = DINO_INITIAL_BOTTOM;
             dinoVelocityY = 0;
-            dino.className = 'run-pose-1'; 
+            dino.className = 'run-pose-1'; // 重設 class 狀態
             currentPose = 1;
-            animationDirection = 1;
             animationFrameCount = 0;
             isJumping = false;
             isDucking = false;
