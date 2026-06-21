@@ -56,7 +56,7 @@
             animation: scrollGround 3s linear infinite;
         }
 
-        /* 主角站立：維持原尺寸 130x195 */
+        /* 主角站立：原尺寸 130x195 */
         #dino {
             position: absolute;
             bottom: 40px; 
@@ -72,7 +72,7 @@
         #dino.run-pose-1 { background-image: url('run1.png'); }
         #dino.run-pose-2 { background-image: url('run2.png'); }
 
-        /* 💡 躺平形態再度放大：變成超巨型的 220x180 */
+        /* 躺平形態：超巨型 220x180 */
         #dino.duck {
             width: 220px;
             height: 180px; 
@@ -81,25 +81,25 @@
 
         #obstacle-container {
             position: absolute;
-            bottom: 40px; 
+            bottom: 40px; /* 剛好在地板的上方 */
             left: 0;
             width: 100%;
             height: calc(100% - 40px);
             z-index: 15;
         }
 
-        /* 💡 書本放大：調整為 80x95 */
+        /* 💡 書本放大且絕對黏在地板邊緣 */
         .book {
             position: absolute;
-            bottom: 0;     
+            bottom: 0; /* 強制貼緊容器最底端（即黏在地板上） */
             width: 80px;  
             height: 95px; 
             background-size: contain;
             background-repeat: no-repeat;
-            background-position: center bottom;
+            background-position: center bottom; /* 圖片靠底對齊 */
         }
 
-        /* 💡 飛機放大：調整為 100x60 */
+        /* 飛機放大：調整為 100x60 */
         .paper-plane {
             position: absolute;
             width: 100px;  
@@ -109,10 +109,10 @@
             background-repeat: no-repeat;
             background-position: center center;
         }
-        /* 重新調配飛機高度，確保與放大後的主角完美搭配 */
-        .paper-plane.high { bottom: 200px; } /* 從頭上飛過，跳躍才會撞到 */
-        .paper-plane.mid { bottom: 90px; }   /* 需要躺平才能躲過 */
-        .paper-plane.low { bottom: 10px; }   /* 貼近地面，必須跳躍 */
+        /* 💡 因應書本完全落地，稍微微調飛機的高度，避免視覺重疊且優化躲避體驗 */
+        .paper-plane.high { bottom: 210px; } 
+        .paper-plane.mid { bottom: 105px; }   
+        .paper-plane.low { bottom: 15px; }    
 
         #score {
             position: absolute;
@@ -160,7 +160,7 @@
             transform: translate(3px, 3px);
         }
 
-        /* 💡 純英文電玩風格的開始畫面 */
+        /* 純英文電玩風格開始畫面 */
         #start-screen {
             position: absolute;
             top: 0;
@@ -418,7 +418,7 @@
             let dinoCollision;
 
             if (isDucking) {
-                // 💡 終極修復：當躺平時，將碰撞判定區的「天花板」大幅下壓 (top + 100)，忽略圖片上半部透明空氣
+                // 躺平判定：天花板高度下壓 (top + 100)，忽略透明空氣
                 dinoCollision = {
                     left: dinoRect.left + 50,
                     right: dinoRect.right - 50,
@@ -426,7 +426,7 @@
                     bottom: dinoRect.bottom - 10
                 };
             } else {
-                // 站立時的正常判定
+                // 站立判定
                 dinoCollision = {
                     left: dinoRect.left + 35,
                     right: dinoRect.right - 35,
@@ -438,7 +438,6 @@
             for (let obs of obstacles) {
                 const obsRect = obs.element.getBoundingClientRect();
                 
-                // 稍微縮小障礙物的判定箱，給玩家一點容錯率（特別是物件變大之後）
                 const obsCollision = {
                     left: obsRect.left + 15,
                     right: obsRect.right - 15,
