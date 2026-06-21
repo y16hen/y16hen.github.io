@@ -19,7 +19,7 @@
         #game-container {
             position: relative;
             width: 800px;
-            height: 350px; /* 稍微加高遊戲畫面，容納放大後的物件 */
+            height: 350px; 
             background-color: transparent; 
             overflow: hidden;
             border: 4px solid #fff;
@@ -54,10 +54,10 @@
             animation: scrollGround 3s linear infinite;
         }
 
-        /* --- 主角 站立 狀態 (100x150) --- */
+        /* --- 主角 站立/跑步 狀態 (100x150) --- */
         #dino {
             position: absolute;
-            bottom: 40px; 
+            bottom: 35px; /* 稍微往下壓，踩在紅土上 */
             left: 50px;
             width: 100px;  
             height: 150px; 
@@ -68,34 +68,34 @@
             z-index: 20;
         }
 
-        /* --- 💡 主角 躺平 狀態放大！(100x95) --- */
+        /* --- 💡 主角 躺平 狀態大大放寬！(150x95) 這樣看起來才跟跑步一樣大 --- */
         #dino.duck {
-            width: 100px;
+            width: 150px;  /* 寬度拉大，符合橫躺的比例 */
             height: 95px; 
-            background-image: url('image_2.png');
+            background-image: url('image_2.png') !important; /* 強制使用躺平圖 */
         }
 
         #obstacle-container {
             position: absolute;
-            bottom: 40px;
+            bottom: 0; /* 容器沉到底部 */
             left: 0;
             width: 100%;
-            height: calc(100% - 40px);
+            height: 100%;
             z-index: 15;
         }
 
-        /* --- 💡 書本尺寸全面放大 (85x100) --- */
+        /* --- 💡 書本稍微縮小，並且 bottom 改成 35px 完美黏在紅土上 --- */
         .book {
             position: absolute;
-            bottom: 0;
-            width: 85px;  
-            height: 100px; 
+            bottom: 35px; /* 黏住紅土地面 */
+            width: 65px;  /* 從 85 縮小到 65 */
+            height: 80px; /* 從 100 縮小到 80 */
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center bottom;
         }
 
-        /* --- 💡 紙飛機尺寸全面放大 (90x55) --- */
+        /* --- 紙飛機 (90x55) --- */
         .paper-plane {
             position: absolute;
             width: 90px;  
@@ -105,7 +105,6 @@
             background-repeat: no-repeat;
             background-position: center center;
         }
-        /* 配合整體放大，微調飛機的飛行高度 */
         .paper-plane.high { bottom: 180px; } 
         .paper-plane.mid { bottom: 115px; } 
         .paper-plane.low { bottom: 40px; } 
@@ -196,8 +195,8 @@
         const startScreen = document.getElementById('start-screen');
 
         const GRAVITY = 1.6;          
-        const JUMP_FORCE = -25;       /* 微調跳躍力適應新高度 */
-        const DINO_INITIAL_BOTTOM = 40;
+        const JUMP_FORCE = -25;       
+        const DINO_INITIAL_BOTTOM = 35; // 踩在紅土上的起始高度
         const PLANE_DELAY_SCORE = 150; 
 
         let isRunning = false;
@@ -214,6 +213,10 @@
         let nextObstacleTime = 0;
         let nextCloudTime = 0;
 
+        // 💡 雙圖片踏步跑步動畫變數
+        let runFrame = 1; 
+        let lastFrameTime = 0;
+
         function startGame() {
             if (isGameStarted) return;
             isGameStarted = true;
@@ -223,7 +226,6 @@
             gameLoop();
         }
 
-        // 鍵盤控制邏輯（方向鍵 ⬆️ 跳躍、⬇️ 躺平）
         document.addEventListener('keydown', (e) => {
             if (!isGameStarted && (e.code === 'Space' || e.key === ' ' || e.code === 'ArrowUp')) {
                 startGame();
@@ -263,6 +265,7 @@
             requestAnimationFrame(gameLoop);
         }
 
+        // --- 💡 更新主角狀態（含 image_1 與 image_3 的踏步切換） ---
         function updateDino() {
             if (isJumping) {
                 dinoVelocityY += GRAVITY;
@@ -272,6 +275,18 @@
                     dinoBottom = DINO_INITIAL_BOTTOM;
                     isJumping = false;
                     dinoVelocityY = 0;
+                }
+                // 跳躍時固定顯示第一張圖
+                if (!isDucking) dino.style.backgroundImage = "url('image_1.png')";
+            } else if (isDucking) {
+                // 躺平時由 CSS 的 #dino.duck 控制換成 image_2.png
+            } else {
+                // 在地上跑步時，每隔 150 毫秒切換一次雙腳動作 (image_1.png ↔ image_3.png)
+                const now = Date.now();
+                if (now - lastFrameTime > 150) {
+                    runFrame = runFrame === 1 ? 3 : 1;
+                    dino.style.backgroundImage = `url('image_${runFrame}.png')`;
+                    lastFrameTime = now;
                 }
             }
             dino.style.bottom = `${dinoBottom}px`;
@@ -325,13 +340,12 @@
                     bookElement.classList.add('book');
                     bookElement.style.left = '800px';
                     
-                    // 1 到 4 隨機抽籤書本
                     const bookNum = Math.floor(Math.random() * 4) + 1; 
                     bookElement.style.backgroundImage = `url('book${bookNum}.png')`;
                     
                     obstacleContainer.appendChild(bookElement);
-                    // 同步放大碰撞框數據
-                    obstacles.push({ element: bookElement, x: 800, width: 85, height: 100, type: 'book' });
+                    // 同步縮小後的碰撞框數據 (65x80)
+                    obstacles.push({ element: bookElement, x: 800, width: 65, height: 80, type: 'book' });
                 } else if (obstacleType === 'plane') {
                     const planeElement = document.createElement('div');
                     planeElement.classList.add('paper-plane');
@@ -339,23 +353,21 @@
                     planeElement.classList.add(planeLevels[Math.floor(Math.random() * planeLevels.length)]);
                     planeElement.style.left = '800px';
                     obstacleContainer.appendChild(planeElement);
-                    // 同步放大碰撞框數據
                     obstacles.push({ element: planeElement, x: 800, width: 90, height: 55, type: 'plane' });
                 }
 
-                // 稍微拉長大物件的生成間距，避免撞在一起
                 nextObstacleTime = now + (1200 / (speed / 10)) + Math.random() * 1800;
             }
         }
 
         function checkCollisions() {
             const dinoRect = dino.getBoundingClientRect();
-            // 縮減隱形判定框邊緣，讓大圖片玩起來判定依然精準
+            // 精準微調碰撞框
             const dinoCollision = {
-                left: dinoRect.left + 30,
-                right: dinoRect.right - 30,
+                left: dinoRect.left + (isDucking ? 20 : 30),
+                right: dinoRect.right - (isDucking ? 20 : 30),
                 top: dinoRect.top + 25,
-                bottom: dinoRect.bottom - 10
+                bottom: dinoRect.bottom - 5
             };
 
             for (let obs of obstacles) {
@@ -364,7 +376,7 @@
                     left: obsRect.left + 15,
                     right: obsRect.right - 15,
                     top: obsRect.top + 15,
-                    bottom: obsRect.bottom - 10
+                    bottom: obsRect.bottom - 5
                 };
 
                 if (dinoCollision.left < obsCollision.right &&
