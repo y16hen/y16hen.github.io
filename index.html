@@ -1,1 +1,548 @@
-hello world
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>像素紅土跑酷</title>
+    <style>
+        /* --- 遊戲基礎樣式 --- */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f7f7f7;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            image-rendering: pixelated; /* 像素化渲染 */
+        }
+
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 300px;
+            background-color: #fff;
+            overflow: hidden;
+            border-bottom: 2px solid #535353;
+            /* 模擬格子背景，模仿圖中樣式 */
+            background-image: 
+                linear-gradient(45deg, rgba(200, 200, 200, 0.3) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(200, 200, 200, 0.3) 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, rgba(200, 200, 200, 0.3) 75%),
+                linear-gradient(-45deg, transparent 75%, rgba(200, 200, 200, 0.3) 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+        }
+
+        /* --- 地面 (紅土) --- */
+        #ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 32px;
+            background-color: #d17a6a; /* 紅土主色 */
+            display: flex;
+            background-image: 
+                linear-gradient(to right, transparent 0, transparent 4px, #a65147 4px, #a65147 8px);
+            background-size: 16px 16px; /* 地面紋理 */
+            z-index: 10;
+        }
+
+        /* --- 主角 (站立) --- */
+        #dino {
+            position: absolute;
+            bottom: 32px; /* 站在地面上 */
+            left: 50px;
+            width: 44px;
+            height: 60px;
+            background-color: #fff;
+            border-radius: 4px;
+            z-index: 20;
+            transition: height 0.1s, bottom 0.1s;
+        }
+        
+        /* 站立形態像素繪製 */
+        #dino::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+            box-shadow:
+                /* 頭 */
+                16px -28px 0 0 #333, 16px -24px 0 0 #333, 20px -28px 0 0 #333, 20px -24px 0 0 #333,
+                24px -28px 0 0 #333, 24px -24px 0 0 #333,
+                16px -20px 0 0 #ccc, 16px -16px 0 0 #ccc, 20px -20px 0 0 #ccc, 20px -16px 0 0 #ccc,
+                /* 身 */
+                0px 0px 0 0 #333, 4px 0px 0 0 #333, 8px 0px 0 0 #333, 12px 0px 0 0 #333,
+                0px 4px 0 0 #333, 4px 4px 0 0 #333, 8px 4px 0 0 #333, 12px 4px 0 0 #333,
+                /* 腿 */
+                4px 12px 0 0 #333, 12px 12px 0 0 #333;
+        }
+
+        /* 躺平 (蹲下) 形態 */
+        #dino.duck {
+            height: 36px;
+            bottom: 32px; /* 縮小高度 */
+        }
+        #dino.duck::before {
+            box-shadow:
+                /* 頭縮小在身體前部 */
+                32px 0px 0 0 #333, 36px 0px 0 0 #333, 32px 4px 0 0 #333, 36px 4px 0 0 #333,
+                /* 身 */
+                0px 0px 0 0 #333, 4px 0px 0 0 #333, 8px 0px 0 0 #333, 12px 0px 0 0 #333,
+                16px 0px 0 0 #333, 20px 0px 0 0 #333, 24px 0px 0 0 #333, 28px 0px 0 0 #333,
+                0px 4px 0 0 #333, 4px 4px 0 0 #333, 8px 4px 0 0 #333, 12px 4px 0 0 #333,
+                16px 4px 0 0 #333, 20px 4px 0 0 #333, 24px 4px 0 0 #333, 28px 4px 0 0 #333,
+                /* 腿 */
+                4px 12px 0 0 #333, 12px 12px 0 0 #333;
+        }
+
+        /* --- 書本障礙物容器 --- */
+        #obstacle-container {
+            position: absolute;
+            bottom: 32px;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 32px);
+            z-index: 15;
+        }
+
+        .book-group {
+            position: absolute;
+            bottom: 0;
+            display: flex;
+            align-items: flex-end;
+            image-rendering: pixelated;
+        }
+
+        /* --- 單本書本樣式 (模仿參考圖) --- */
+        .book {
+            height: 100%;
+            background-color: transparent;
+            position: relative;
+            /* 深綠色像素紋理 */
+            box-shadow:
+                0 0 0 4px #1a3c2a, /* 深綠外框 */
+                4px 0 0 0 #2d5d42 inset, /* 淺綠內紋 */
+                8px 0 0 0 #2d5d42 inset;
+        }
+        .book::after {
+            content: "";
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 4px;
+            height: 4px;
+            background-color: #2d5d42; /* 書本內紋點綴 */
+        }
+        
+        /* 棕色書本樣式 */
+        .book.brown {
+            box-shadow:
+                0 0 0 4px #5e3a2c, /* 棕色外框 */
+                4px 0 0 0 #7e5c4d inset, /* 淺棕內紋 */
+                8px 0 0 0 #7e5c4d inset;
+        }
+        .book.brown::after {
+            background-color: #7e5c4d; /* 棕色內紋點綴 */
+        }
+
+        /* 厚度 */
+        .book.thin { width: 16px; }
+        .book.thick { width: 32px; }
+
+        /* 高度 */
+        .book.low { height: 32px; }
+        .book.mid { height: 48px; }
+        .book.high { height: 64px; }
+
+        /* 間隙 */
+        .book + .book {
+            margin-left: 8px; /* 書本間距離 */
+        }
+
+        /* --- 紙飛機烏鴉樣式 --- */
+        .paper-plane {
+            position: absolute;
+            width: 40px;
+            height: 24px;
+            background-color: transparent;
+            z-index: 18;
+            image-rendering: pixelated;
+        }
+        /* 紙飛機像素繪製 */
+        .paper-plane::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            box-shadow:
+                /* 像素折疊形狀 */
+                4px 0px 0 0 #535353, 8px 0px 0 0 #535353, 12px 0px 0 0 #535353, 16px 0px 0 0 #535353, 20px 0px 0 0 #535353,
+                24px 0px 0 0 #535353, 28px 0px 0 0 #535353, 32px 0px 0 0 #535353, 36px 0px 0 0 #535353, 40px 0px 0 0 #535353,
+                0px 4px 0 0 #535353, 4px 4px 0 0 #fff, 8px 4px 0 0 #fff, 12px 4px 0 0 #fff, 16px 4px 0 0 #fff,
+                20px 4px 0 0 #fff, 24px 4px 0 0 #fff, 28px 4px 0 0 #fff, 32px 4px 0 0 #fff, 36px 4px 0 0 #535353,
+                4px 8px 0 0 #535353, 8px 8px 0 0 #fff, 12px 8px 0 0 #fff, 16px 8px 0 0 #fff, 20px 8px 0 0 #fff,
+                24px 8px 0 0 #fff, 28px 8px 0 0 #fff, 32px 8px 0 0 #535353,
+                8px 12px 0 0 #535353, 12px 12px 0 0 #fff, 16px 12px 0 0 #fff, 20px 12px 0 0 #fff,
+                24px 12px 0 0 #535353,
+                12px 16px 0 0 #535353, 16px 16px 0 0 #fff, 20px 16px 0 0 #535353,
+                16px 20px 0 0 #535353;
+        }
+
+        /* 紙飛機高度位置 */
+        .paper-plane.high { bottom: 100px; } /* 必須蹲低 */
+        .paper-plane.mid { bottom: 60px; } /* 必須蹲低 */
+        .paper-plane.low { bottom: 20px; } /* 可以跳過去 */
+
+        /* --- 分數顯示 (右上角，模仿原版) --- */
+        #score {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 20px;
+            color: #535353;
+            font-weight: bold;
+            z-index: 30;
+        }
+
+        /* --- Game Over 覆蓋層 (模仿原版) --- */
+        #game-over-screen {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 50;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        #game-over-text {
+            font-size: 30px;
+            color: #535353;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        #restart-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #535353;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* --- 用戶指示 --- */
+        #instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            font-size: 14px;
+            color: #535353;
+            z-index: 30;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- 分數 -->
+        <div id="score">00000</div>
+        
+        <!-- 地面 -->
+        <div id="ground"></div>
+        
+        <!-- 主角 -->
+        <div id="dino"></div>
+        
+        <!-- 障礙物容器 -->
+        <div id="obstacle-container"></div>
+        
+        <!-- Game Over 畫面 -->
+        <div id="game-over-screen">
+            <div id="game-over-text">GAME OVER</div>
+            <button id="restart-button">重新開始</button>
+        </div>
+        
+        <!-- 用戶指示 -->
+        <div id="instructions">【空白鍵】跳躍，按住【Shift】躺平（蹲下）</div>
+    </div>
+
+    <script>
+        // --- 遊戲邏輯 ---
+
+        const container = document.getElementById('game-container');
+        const dino = document.getElementById('dino');
+        const ground = document.getElementById('ground');
+        const obstacleContainer = document.getElementById('obstacle-container');
+        const scoreElement = document.getElementById('score');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const restartButton = document.getElementById('restart-button');
+
+        // 遊戲狀態和常數
+        const GRAVITY = 0.8;
+        const JUMP_FORCE = -15;
+        const GROUND_HEIGHT = 32;
+        const DINO_INITIAL_BOTTOM = 32;
+        const DINO_WIDTH = 44;
+        const DINO_HEIGHT_STANDING = 60;
+        const DINO_HEIGHT_DUCKING = 36;
+        const PLANE_DELAY_SCORE = 200; // 紙飛機延遲出現的分數
+
+        let isRunning = true;
+        let isJumping = false;
+        let isDucking = false;
+        let dinoVelocityY = 0;
+        let dinoBottom = DINO_INITIAL_BOTTOM;
+        let score = 0;
+        let speed = 6; // 初始滾動速度
+        let obstacles = [];
+        let nextObstacleTime = 0;
+        let planeSpawned = false;
+
+        // 鍵盤輸入監聽
+        document.addEventListener('keydown', (e) => {
+            if (!isRunning) return;
+            if (e.code === 'Space' && !isJumping && !isDucking) {
+                // 跳躍
+                isJumping = true;
+                dinoVelocityY = JUMP_FORCE;
+            }
+            if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+                // 躺平 (蹲下)
+                isDucking = true;
+                dino.classList.add('duck');
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (!isRunning) return;
+            if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+                // 取消躺平
+                isDucking = false;
+                dino.classList.remove('duck');
+            }
+        });
+
+        // 遊戲循環
+        function gameLoop() {
+            if (!isRunning) return;
+
+            updateDino();
+            updateObstacles();
+            updateScore();
+            checkCollisions();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 更新主角
+        function updateDino() {
+            if (isJumping) {
+                dinoVelocityY += GRAVITY;
+                dinoBottom -= dinoVelocityY;
+
+                // 檢查落地
+                if (dinoBottom <= DINO_INITIAL_BOTTOM) {
+                    dinoBottom = DINO_INITIAL_BOTTOM;
+                    isJumping = false;
+                    dinoVelocityY = 0;
+                }
+            }
+            dino.style.bottom = `${dinoBottom}px`;
+        }
+
+        // 更新障礙物
+        function updateObstacles() {
+            // 移動現有障礙物
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].x -= speed;
+                obstacles[i].element.style.left = `${obstacles[i].x}px`;
+
+                // 移除移出畫面的障礙物
+                if (obstacles[i].x < -100) {
+                    obstacleContainer.removeChild(obstacles[i].element);
+                    obstacles.splice(i, 1);
+                }
+            }
+
+            // 生成新障礙物
+            const now = Date.now();
+            if (now > nextObstacleTime) {
+                const random = Math.random();
+                let obstacleType;
+
+                // 隨機書本排列組合類型
+                const bookGroupTypes = [
+                    ['thin', 'thick'], ['thick', 'thin'], ['thin', 'thin'], 
+                    ['thin', 'thin', 'thin'], ['thick'], ['thin'], ['mid', 'thin'], 
+                    ['high', 'thin', 'thin'], ['thin', 'high']
+                ];
+                const colors = ['', 'brown']; // 深綠色和棕色
+
+                // 分數足夠才開始生成紙飛機
+                if (score > PLANE_DELAY_SCORE && random < 0.3) {
+                    // 生成紙飛機
+                    obstacleType = 'plane';
+                } else {
+                    // 生成書本
+                    obstacleType = 'books';
+                }
+
+                if (obstacleType === 'books') {
+                    // 創建書本組
+                    const bookGroupElement = document.createElement('div');
+                    bookGroupElement.classList.add('book-group');
+                    const groupType = bookGroupTypes[Math.floor(Math.random() * bookGroupTypes.length)];
+                    let groupWidth = 0;
+
+                    // 在組內隨機生成書本
+                    for (let j = 0; j < groupType.length; j++) {
+                        const bookElement = document.createElement('div');
+                        bookElement.classList.add('book', groupType[j]);
+                        
+                        // 隨機顏色
+                        if (Math.random() < 0.5) bookElement.classList.add('brown');
+                        
+                        // 隨機高度
+                        const heightLevels = ['low', 'mid', 'high'];
+                        bookElement.classList.add(heightLevels[Math.floor(Math.random() * heightLevels.length)]);
+                        
+                        bookGroupElement.appendChild(bookElement);
+                        groupWidth += (groupType[j] === 'thick' ? 32 : 16) + 8; // 書本寬 + 間隙
+                    }
+                    
+                    bookGroupElement.style.left = '800px';
+                    bookGroupElement.style.height = '64px'; // 最大書本高度
+                    obstacleContainer.appendChild(bookGroupElement);
+                    obstacles.push({ element: bookGroupElement, x: 800, width: groupWidth, height: 64, type: 'books' });
+
+                } else if (obstacleType === 'plane') {
+                    // 創建紙飛機
+                    const planeElement = document.createElement('div');
+                    planeElement.classList.add('paper-plane');
+                    
+                    // 隨機高度位置
+                    const planeLevels = ['high', 'mid', 'low'];
+                    planeElement.classList.add(planeLevels[Math.floor(Math.random() * planeLevels.length)]);
+                    
+                    planeElement.style.left = '800px';
+                    obstacleContainer.appendChild(planeElement);
+                    obstacles.push({ element: planeElement, x: 800, width: 40, height: 24, type: 'plane' });
+                }
+
+                // 隨機下次生成時間
+                nextObstacleTime = now + (1000 / (speed / 10)) + Math.random() * 2000;
+            }
+        }
+
+        // 碰撞檢測
+        function checkCollisions() {
+            // 獲取當前主角碰撞箱
+            const dinoRect = {
+                left: 50,
+                right: 50 + DINO_WIDTH,
+                top: 300 - dinoBottom - (isDucking ? DINO_HEIGHT_DUCKING : DINO_HEIGHT_STANDING),
+                bottom: 300 - dinoBottom
+            };
+
+            for (let obs of obstacles) {
+                // 獲取書本組或單本書的碰撞箱
+                const obsRect = obs.element.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                const obsCollisionRect = {
+                    left: obsRect.left - containerRect.left,
+                    right: obsRect.right - containerRect.left,
+                    top: obsRect.top - containerRect.top,
+                    bottom: obsRect.bottom - containerRect.top
+                };
+
+                // 基礎矩形碰撞檢測
+                if (dinoRect.left < obsCollisionRect.right &&
+                    dinoRect.right > obsCollisionRect.left &&
+                    dinoRect.top < obsCollisionRect.bottom &&
+                    dinoRect.bottom > obsCollisionRect.top) {
+                    
+                    // 針對書本組的細化檢測 (只檢測組內單本書)
+                    if (obs.type === 'books') {
+                        let innerCollision = false;
+                        for (let book of obs.element.children) {
+                            const bookRect = book.getBoundingClientRect();
+                            const bookCollisionRect = {
+                                left: bookRect.left - containerRect.left,
+                                right: bookRect.right - containerRect.left,
+                                top: bookRect.top - containerRect.top,
+                                bottom: bookRect.bottom - containerRect.top
+                            };
+                            if (dinoRect.left < bookCollisionRect.right &&
+                                dinoRect.right > bookCollisionRect.left &&
+                                dinoRect.top < bookCollisionRect.bottom &&
+                                dinoRect.bottom > bookCollisionRect.top) {
+                                innerCollision = true;
+                                break;
+                            }
+                        }
+                        if (innerCollision) {
+                            endGame();
+                            return;
+                        }
+                    } else if (obs.type === 'plane') {
+                        // 紙飛機碰撞：跳過低飛的，躺平避開高飛的
+                        endGame();
+                        return;
+                    }
+                }
+            }
+        }
+
+        // 結束遊戲
+        function endGame() {
+            isRunning = false;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        // 重新開始
+        function resetGame() {
+            isRunning = true;
+            gameOverScreen.style.display = 'none';
+            score = 0;
+            speed = 6;
+            obstacles = [];
+            obstacleContainer.innerHTML = '';
+            dinoBottom = DINO_INITIAL_BOTTOM;
+            dinoVelocityY = 0;
+            dino.classList.remove('duck');
+            isJumping = false;
+            isDucking = false;
+            planeSpawned = false;
+            nextObstacleTime = 0;
+            gameLoop();
+        }
+
+        // 更新分數
+        function updateScore() {
+            score++;
+            const scoreStr = String(Math.floor(score / 10)).padStart(5, '0');
+            scoreElement.innerText = scoreStr;
+            // 隨時間增加速度
+            if (score % 500 === 0 && speed < 12) {
+                speed += 0.5;
+            }
+        }
+
+        restartButton.addEventListener('click', resetGame);
+
+        // 開始遊戲
+        gameLoop();
+
+    </script>
+</body>
+</html>
