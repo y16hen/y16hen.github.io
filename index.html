@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的專屬自訂跑酷遊戲</title>
+    <title>CUSTOM PARKOUR GAME</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         body {
@@ -13,7 +13,7 @@
             height: 100vh;
             margin: 0;
             background-color: #333;
-            font-family: 'Press Start 2P', monospace; /* 全域套用像素字體 */
+            font-family: 'Press Start 2P', monospace;
             overflow: hidden;
         }
 
@@ -24,7 +24,7 @@
             background-color: transparent; 
             overflow: hidden;
             border: 4px solid #fff;
-            cursor: pointer; /* 讓玩家知道這裡可以點擊 */
+            cursor: pointer; 
         }
 
         .cloud {
@@ -56,7 +56,7 @@
             animation: scrollGround 3s linear infinite;
         }
 
-        /* 主角基礎設定 */
+        /* 主角站立：維持原尺寸 130x195 */
         #dino {
             position: absolute;
             bottom: 40px; 
@@ -69,14 +69,13 @@
             z-index: 20;
         }
 
-        /* 動態切換跑步姿勢的 CSS Class */
         #dino.run-pose-1 { background-image: url('run1.png'); }
         #dino.run-pose-2 { background-image: url('run2.png'); }
 
-        /* 躺平形態 */
+        /* 💡 躺平形態再度放大：變成超巨型的 220x180 */
         #dino.duck {
-            width: 170px;
-            height: 162px; 
+            width: 220px;
+            height: 180px; 
             background-image: url('duck.png') !important; 
         }
 
@@ -89,32 +88,32 @@
             z-index: 15;
         }
 
-        /* 書本貼齊最底端 */
+        /* 💡 書本放大：調整為 80x95 */
         .book {
             position: absolute;
             bottom: 0;     
-            width: 60px;  
-            height: 70px; 
+            width: 80px;  
+            height: 95px; 
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center bottom;
         }
 
-        /* 飛機 */
+        /* 💡 飛機放大：調整為 100x60 */
         .paper-plane {
             position: absolute;
-            width: 70px;  
-            height: 43px; 
+            width: 100px;  
+            height: 60px; 
             background-image: url('plane.png');
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center center;
         }
-        .paper-plane.high { bottom: 165px; } 
-        .paper-plane.mid { bottom: 105px; } 
-        .paper-plane.low { bottom: 0px; }    
+        /* 重新調配飛機高度，確保與放大後的主角完美搭配 */
+        .paper-plane.high { bottom: 200px; } /* 從頭上飛過，跳躍才會撞到 */
+        .paper-plane.mid { bottom: 90px; }   /* 需要躺平才能躲過 */
+        .paper-plane.low { bottom: 10px; }   /* 貼近地面，必須跳躍 */
 
-        /* 分數面板像素風 */
         #score {
             position: absolute;
             top: 20px;
@@ -139,7 +138,6 @@
             flex-direction: column;
         }
         
-        /* GAME OVER 像素風字體 */
         #game-over-text {
             font-size: 36px;
             color: #ff3333; 
@@ -147,7 +145,6 @@
             text-shadow: 4px 4px 0px #000;
         }
         
-        /* 重新開始按鈕 */
         #restart-button {
             font-family: 'Press Start 2P', monospace; 
             padding: 12px 24px;
@@ -163,15 +160,14 @@
             transform: translate(3px, 3px);
         }
 
-        /* 開始畫面：💡 這裡已將黃色的字改為純白色 */
+        /* 💡 純英文電玩風格的開始畫面 */
         #start-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: white;
+            background-color: rgba(0, 0, 0, 0.85);
             z-index: 60;
             display: flex;
             justify-content: center;
@@ -182,16 +178,26 @@
             box-sizing: border-box;
         }
         #start-screen h2 {
-            font-size: 20px;
-            line-height: 1.6;
-            margin-bottom: 15px;
-            color: #ffffff; /* 💡 修改為純白色 */
-            text-shadow: 3px 3px 0px #000; /* 加入像素風黑色陰影 */
+            font-size: 32px;
+            color: #ffffff;
+            text-shadow: 4px 4px 0px #000;
+            margin-bottom: 30px;
         }
-        #start-screen p {
-            font-size: 14px;
-            color: #ccc;
+        .blink-text {
+            font-size: 16px;
+            color: #ffffff;
             text-shadow: 2px 2px 0px #000;
+            animation: blink 1s step-end infinite;
+            margin-bottom: 40px;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+        .controls {
+            font-size: 10px;
+            color: #aaa;
+            text-shadow: 1px 1px 0px #000;
+            line-height: 2;
         }
     </style>
 </head>
@@ -204,8 +210,9 @@
         <div id="obstacle-container"></div>
         
         <div id="start-screen">
-            <h2>點擊畫面或按【空白鍵】或【⬆️】<br>開始遊戲</h2>
-            <p>【空白鍵 / ⬆️】跳躍 ｜ 按住【⬇️】躺平</p>
+            <h2>GAME START</h2>
+            <div class="blink-text">PRESS ANY KEY</div>
+            <div class="controls">[SPACE / UP] JUMP<br>[DOWN] DUCK</div>
         </div>
 
         <div id="game-over-screen">
@@ -215,7 +222,7 @@
     </div>
 
     <script>
-        window.focus(); // 💡 網頁載入時強制聚焦，避免鍵盤按鍵失效
+        window.focus(); 
 
         const container = document.getElementById('game-container');
         const dino = document.getElementById('dino');
@@ -250,7 +257,7 @@
 
         function startGame() {
             if (isGameStarted) return;
-            window.focus(); // 確保開始時焦點在網頁內
+            window.focus();
             isGameStarted = true;
             isRunning = true;
             startScreen.style.display = 'none';
@@ -258,13 +265,11 @@
             gameLoop();
         }
 
-        // 監聽鍵盤按下
         document.addEventListener('keydown', (e) => {
-            // 💡 如果遊戲還沒開始，按空白鍵或上方向鍵都可以直接觸發開始
             if (!isGameStarted) {
                 if (e.code === 'Space' || e.key === ' ' || e.code === 'ArrowUp' || e.key === 'ArrowUp') {
                     startGame();
-                    e.preventDefault(); // 防止空白鍵讓網頁滾動
+                    e.preventDefault(); 
                     return;
                 }
             }
@@ -285,7 +290,6 @@
             }
         });
 
-        // 監聽鍵盤放開
         document.addEventListener('keyup', (e) => {
             if (!isRunning) return;
             if (e.code === 'ArrowDown' || e.key === 'ArrowDown') {
@@ -294,11 +298,8 @@
             }
         });
 
-        // 💡 點擊整個遊戲畫面都可以直接開始遊戲
         container.addEventListener('click', () => {
-            if (!isGameStarted) {
-                startGame();
-            }
+            if (!isGameStarted) startGame();
         });
 
         function gameLoop() {
@@ -397,7 +398,7 @@
                     bookElement.style.backgroundImage = `url('book${bookNum}.png')`;
                     
                     obstacleContainer.appendChild(bookElement);
-                    obstacles.push({ element: bookElement, x: 800, width: 60, height: 70, type: 'book' });
+                    obstacles.push({ element: bookElement, x: 800, width: 80, height: 95, type: 'book' });
                 } else if (obstacleType === 'plane') {
                     const planeElement = document.createElement('div');
                     planeElement.classList.add('paper-plane');
@@ -405,7 +406,7 @@
                     planeElement.classList.add(planeLevels[Math.floor(Math.random() * planeLevels.length)]);
                     planeElement.style.left = '800px';
                     obstacleContainer.appendChild(planeElement);
-                    obstacles.push({ element: planeElement, x: 800, width: 70, height: 43, type: 'plane' });
+                    obstacles.push({ element: planeElement, x: 800, width: 100, height: 60, type: 'plane' });
                 }
 
                 nextObstacleTime = now + (1200 / (speed / 10)) + Math.random() * 1800;
@@ -414,24 +415,35 @@
 
         function checkCollisions() {
             const dinoRect = dino.getBoundingClientRect();
-            
-            const paddingX = isDucking ? 45 : 35;
-            const paddingTop = isDucking ? 45 : 30;
+            let dinoCollision;
 
-            const dinoCollision = {
-                left: dinoRect.left + paddingX,
-                right: dinoRect.right - paddingX,
-                top: dinoRect.top + paddingTop,
-                bottom: dinoRect.bottom - 10
-            };
+            if (isDucking) {
+                // 💡 終極修復：當躺平時，將碰撞判定區的「天花板」大幅下壓 (top + 100)，忽略圖片上半部透明空氣
+                dinoCollision = {
+                    left: dinoRect.left + 50,
+                    right: dinoRect.right - 50,
+                    top: dinoRect.top + 100, 
+                    bottom: dinoRect.bottom - 10
+                };
+            } else {
+                // 站立時的正常判定
+                dinoCollision = {
+                    left: dinoRect.left + 35,
+                    right: dinoRect.right - 35,
+                    top: dinoRect.top + 30,
+                    bottom: dinoRect.bottom - 10
+                };
+            }
 
             for (let obs of obstacles) {
                 const obsRect = obs.element.getBoundingClientRect();
+                
+                // 稍微縮小障礙物的判定箱，給玩家一點容錯率（特別是物件變大之後）
                 const obsCollision = {
-                    left: obsRect.left + 8,
-                    right: obsRect.right - 8,
-                    top: obsRect.top + 8,
-                    bottom: obsRect.bottom - 5
+                    left: obsRect.left + 15,
+                    right: obsRect.right - 15,
+                    top: obsRect.top + 15,
+                    bottom: obsRect.bottom - 10
                 };
 
                 if (dinoCollision.left < obsCollision.right &&
@@ -484,7 +496,6 @@
             }
         }
 
-        // 💡 防止點擊 RESTART 按鈕時，冒泡事件重複觸發 container 的點擊事件
         restartButton.addEventListener('click', (e) => {
             e.stopPropagation();
             resetGame();
