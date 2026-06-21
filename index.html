@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的專屬跑酷遊戲</title>
+    <title>我的專屬自訂跑酷遊戲</title>
     <style>
         body {
             display: flex;
@@ -54,42 +54,43 @@
             animation: scrollGround 3s linear infinite;
         }
 
-        /* 主角基礎設定 */
+        /* 💡 主角基礎設定：這裡幫你放大成 130px * 195px */
         #dino {
             position: absolute;
             bottom: 40px; 
             left: 50px;
-            width: 100px;  
-            height: 150px; 
+            width: 130px;  
+            height: 195px; 
             background-size: contain; 
             background-repeat: no-repeat;
             background-position: center bottom;
             z-index: 20;
         }
 
-        /* 💡 動態切換跑步姿勢的 CSS Class */
+        /* 動態切換跑步姿勢的 CSS Class */
         #dino.run-pose-1 { background-image: url('run1.png'); }
         #dino.run-pose-2 { background-image: url('run2.png'); }
 
-        /* 💡 躺平形態 */
+        /* 💡 躺平形態：寬度維持 130px，高度配合等比例放大為 124px */
         #dino.duck {
-            width: 100px;
-            height: 95px; 
-            background-image: url('duck.png') !important; /* 強制覆蓋跑步圖 */
+            width: 130px;
+            height: 124px; 
+            background-image: url('duck.png') !important; 
         }
 
         #obstacle-container {
             position: absolute;
-            bottom: 40px;
+            bottom: 40px; 
             left: 0;
             width: 100%;
             height: calc(100% - 40px);
             z-index: 15;
         }
 
+        /* 書本貼齊最底端 */
         .book {
             position: absolute;
-            bottom: 0;
+            bottom: 0;     
             width: 85px;  
             height: 100px; 
             background-size: contain;
@@ -97,18 +98,20 @@
             background-position: center bottom;
         }
 
+        /* 💡 飛機縮小：這裡縮小為 70px * 43px */
         .paper-plane {
             position: absolute;
-            width: 90px;  
-            height: 55px; 
+            width: 70px;  
+            height: 43px; 
             background-image: url('plane.png');
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center center;
         }
-        .paper-plane.high { bottom: 180px; } 
-        .paper-plane.mid { bottom: 115px; } 
-        .paper-plane.low { bottom: 40px; } 
+        /* 💡 因應主角放大，微調了飛機高度讓難易度更合理 */
+        .paper-plane.high { bottom: 165px; } /* 需要站著或跳躍躲避 */
+        .paper-plane.mid { bottom: 95px; }   /* 需要蹲下躲避 */
+        .paper-plane.low { bottom: 0px; }    /* 需要跳躍躲避 */
 
         #score {
             position: absolute;
@@ -214,7 +217,6 @@
         let nextObstacleTime = 0;
         let nextCloudTime = 0;
 
-        // 跑步動畫計時器
         let animationFrameCount = 0;
         let currentPose = 1;
 
@@ -267,7 +269,6 @@
         }
 
         function updateDino() {
-            // 處理跳躍物理
             if (isJumping) {
                 dinoVelocityY += GRAVITY;
                 dinoBottom -= dinoVelocityY;
@@ -280,10 +281,9 @@
             }
             dino.style.bottom = `${dinoBottom}px`;
 
-            // 💡 處理雙腳跑步交替動畫 (在地面上且沒蹲下時才切換)
             if (!isJumping && !isDucking) {
                 animationFrameCount++;
-                if (animationFrameCount >= 9) { // 每 9 幀（約 0.15 秒）換一次姿勢
+                if (animationFrameCount >= 9) { 
                     animationFrameCount = 0;
                     if (currentPose === 1) {
                         dino.classList.remove('run-pose-1');
@@ -296,7 +296,6 @@
                     }
                 }
             } else if (isJumping) {
-                // 跳躍時固定用姿勢 1 
                 dino.classList.remove('run-pose-2');
                 dino.classList.add('run-pose-1');
                 currentPose = 1;
@@ -355,6 +354,7 @@
                     bookElement.style.backgroundImage = `url('book${bookNum}.png')`;
                     
                     obstacleContainer.appendChild(bookElement);
+                    // 這裡的寬高也要與上面 CSS 保持一致 (書本沒變維持 85, 100)
                     obstacles.push({ element: bookElement, x: 800, width: 85, height: 100, type: 'book' });
                 } else if (obstacleType === 'plane') {
                     const planeElement = document.createElement('div');
@@ -363,7 +363,8 @@
                     planeElement.classList.add(planeLevels[Math.floor(Math.random() * planeLevels.length)]);
                     planeElement.style.left = '800px';
                     obstacleContainer.appendChild(planeElement);
-                    obstacles.push({ element: planeElement, x: 800, width: 90, height: 55, type: 'plane' });
+                    // 💡 這裡的碰撞判定寬高同步修改為小飛機尺寸 (70, 43)
+                    obstacles.push({ element: planeElement, x: 800, width: 70, height: 43, type: 'plane' });
                 }
 
                 nextObstacleTime = now + (1200 / (speed / 10)) + Math.random() * 1800;
@@ -372,20 +373,21 @@
 
         function checkCollisions() {
             const dinoRect = dino.getBoundingClientRect();
+            // 💡 主角變大後，碰撞範圍有稍微往內縮一些，讓判定比較寬容、好過關
             const dinoCollision = {
-                left: dinoRect.left + 30,
-                right: dinoRect.right - 30,
-                top: dinoRect.top + 25,
+                left: dinoRect.left + 35,
+                right: dinoRect.right - 35,
+                top: dinoRect.top + 30,
                 bottom: dinoRect.bottom - 10
             };
 
             for (let obs of obstacles) {
                 const obsRect = obs.element.getBoundingClientRect();
                 const obsCollision = {
-                    left: obsRect.left + 15,
-                    right: obsRect.right - 15,
-                    top: obsRect.top + 15,
-                    bottom: obsRect.bottom - 10
+                    left: obsRect.left + 10,
+                    right: obsRect.right - 10,
+                    top: obsRect.top + 10,
+                    bottom: obsRect.bottom - 5
                 };
 
                 if (dinoCollision.left < obsCollision.right &&
@@ -418,7 +420,7 @@
             
             dinoBottom = DINO_INITIAL_BOTTOM;
             dinoVelocityY = 0;
-            dino.className = 'run-pose-1'; // 重設 class 狀態
+            dino.className = 'run-pose-1'; 
             currentPose = 1;
             animationFrameCount = 0;
             isJumping = false;
