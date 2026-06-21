@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的專屬自訂跑酷遊戲</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         body {
             display: flex;
@@ -12,7 +13,7 @@
             height: 100vh;
             margin: 0;
             background-color: #333;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Press Start 2P', monospace; /* 全域套用像素字體 */
             overflow: hidden;
         }
 
@@ -54,7 +55,7 @@
             animation: scrollGround 3s linear infinite;
         }
 
-        /* 主角基礎設定（維持你滿意的大小） */
+        /* 主角基礎設定 */
         #dino {
             position: absolute;
             bottom: 40px; 
@@ -71,7 +72,7 @@
         #dino.run-pose-1 { background-image: url('run1.png'); }
         #dino.run-pose-2 { background-image: url('run2.png'); }
 
-        /* 💡 躺平形態再放大！變成超巨大的 170px * 162px */
+        /* 躺平形態 */
         #dino.duck {
             width: 170px;
             height: 162px; 
@@ -87,7 +88,7 @@
             z-index: 15;
         }
 
-        /* 💡 書本縮小：調整為 60px * 70px */
+        /* 書本貼齊最底端 */
         .book {
             position: absolute;
             bottom: 0;     
@@ -98,7 +99,7 @@
             background-position: center bottom;
         }
 
-        /* 飛機（維持上次縮小後的大小） */
+        /* 飛機 */
         .paper-plane {
             position: absolute;
             width: 70px;  
@@ -108,20 +109,19 @@
             background-repeat: no-repeat;
             background-position: center center;
         }
-        /* 飛機高度配合同步微調 */
         .paper-plane.high { bottom: 165px; } 
-        .paper-plane.mid { bottom: 105px; } /* 稍微拉高一點點，留空間給變大後的躺平主角 */
+        .paper-plane.mid { bottom: 105px; } 
         .paper-plane.low { bottom: 0px; }    
 
+        /* 💡 分數面板改為像素風：縮小一點字體（16px），因為像素字體通常偏大 */
         #score {
             position: absolute;
             top: 20px;
             right: 20px;
-            font-size: 24px;
-            color: #000;
-            font-weight: bold;
+            font-size: 16px;
+            color: #fff; /* 改成白色，配上黑陰影更像街機風 */
             z-index: 30;
-            text-shadow: 2px 2px 0px #fff;
+            text-shadow: 3px 3px 0px #000;
         }
 
         #game-over-screen {
@@ -131,60 +131,83 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(255, 255, 255, 0.85);
+            background-color: rgba(0, 0, 0, 0.75); /* 改成黑底透明，像素風的死亡畫面更有感 */
             z-index: 50;
             justify-content: center;
             align-items: center;
             flex-direction: column;
         }
+        
+        /* 💡 GAME OVER 像素風字體 */
         #game-over-text {
-            font-size: 40px;
-            color: #000;
-            font-weight: bold;
-            margin-bottom: 20px;
+            font-size: 36px;
+            color: #ff3333; /* 亮紅色 */
+            margin-bottom: 30px;
+            text-shadow: 4px 4px 0px #000;
         }
+        
+        /* 💡 重新開始按鈕改為像素風格 */
         #restart-button {
-            padding: 10px 20px;
-            font-size: 18px;
-            background-color: #000;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
+            font-family: 'Press Start 2P', monospace; /* 確保按鈕也是像素字 */
+            padding: 12px 24px;
+            font-size: 14px;
+            background-color: #fff;
+            color: #000;
+            border: 4px solid #000;
             cursor: pointer;
+            box-shadow: 4px 4px 0px #555;
+        }
+        #restart-button:active {
+            box-shadow: 1px 1px 0px #555;
+            transform: translate(3px, 3px);
         }
 
+        /* 💡 開始畫面像素風微調（由於此字體不支援中文，中文會自動套用新細明體，所以我另外幫你調整了標題層次） */
         #start-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: rgba(0, 0, 0, 0.8);
             color: white;
             z-index: 60;
             display: flex;
             justify-content: center;
             align-items: center;
             flex-direction: column;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #start-screen h2 {
+            font-size: 20px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            color: #ffcc00;
+        }
+        #start-screen p {
+            font-size: 14px;
+            color: #ccc;
         }
     </style>
 </head>
 <body>
 
     <div id="game-container">
-        <div id="score">SCORE: 00000</div>
+        <div id="score">SCORE:00000</div>
         <div id="ground"></div>
         <div id="dino" class="run-pose-1"></div>
         <div id="obstacle-container"></div>
         
         <div id="start-screen">
-            <h2>點擊畫面或按【空白鍵】或【⬆️】開始遊戲</h2>
+            <h2>點擊畫面或按【空白鍵】或【⬆️】<br>開始遊戲</h2>
             <p>【空白鍵 / ⬆️】跳躍 ｜ 按住【⬇️】躺平</p>
         </div>
 
         <div id="game-over-screen">
             <div id="game-over-text">GAME OVER</div>
-            <button id="restart-button">重新開始</button>
+            <button id="restart-button">RESTART</button>
         </div>
     </div>
 
@@ -354,7 +377,6 @@
                     bookElement.style.backgroundImage = `url('book${bookNum}.png')`;
                     
                     obstacleContainer.appendChild(bookElement);
-                    // 💡 JavaScript 裡的書本碰撞判定同步改為縮小後的 60 * 70
                     obstacles.push({ element: bookElement, x: 800, width: 60, height: 70, type: 'book' });
                 } else if (obstacleType === 'plane') {
                     const planeElement = document.createElement('div');
@@ -373,8 +395,6 @@
         function checkCollisions() {
             const dinoRect = dino.getBoundingClientRect();
             
-            // 💡 為了配合巨型躺平狀態（寬度變寬），把左右碰撞邊界往內縮，讓判定變寬容
-            // 這樣雖然看起來很大隻，但不會因為圖片變寬而超容易被擦邊撞死
             const paddingX = isDucking ? 45 : 35;
             const paddingTop = isDucking ? 45 : 30;
 
@@ -389,70 +409,4 @@
                 const obsRect = obs.element.getBoundingClientRect();
                 const obsCollision = {
                     left: obsRect.left + 8,
-                    right: obsRect.right - 8,
-                    top: obsRect.top + 8,
-                    bottom: obsRect.bottom - 5
-                };
-
-                if (dinoCollision.left < obsCollision.right &&
-                    dinoCollision.right > obsCollision.left &&
-                    dinoCollision.top < obsCollision.bottom &&
-                    dinoCollision.bottom > obsCollision.top) {
-                    endGame();
-                    return;
-                }
-            }
-        }
-
-        function endGame() {
-            isRunning = false;
-            ground.classList.remove('moving-ground'); 
-            gameOverScreen.style.display = 'flex';
-        }
-
-        function resetGame() {
-            isRunning = true;
-            gameOverScreen.style.display = 'none';
-            ground.classList.add('moving-ground');
-            score = 0;
-            speed = 6;
-            
-            obstacles = [];
-            obstacleContainer.innerHTML = '';
-            clouds.forEach(c => container.removeChild(c.element));
-            clouds = [];
-            
-            dinoBottom = DINO_INITIAL_BOTTOM;
-            dinoVelocityY = 0;
-            dino.className = 'run-pose-1'; 
-            currentPose = 1;
-            animationFrameCount = 0;
-            isJumping = false;
-            isDucking = false;
-            nextObstacleTime = 0;
-            nextCloudTime = 0;
-            
-            gameLoop();
-        }
-
-        function updateScore() {
-            score++;
-            const scoreStr = String(Math.floor(score / 10)).padStart(5, '0');
-            scoreElement.innerText = 'SCORE: ' + scoreStr;
-            if (score % 500 === 0 && speed < 14) {
-                speed += 0.5;
-            }
-        }
-
-        restartButton.addEventListener('click', resetGame);
-        
-        const initialCloud = document.createElement('div');
-        initialCloud.classList.add('cloud');
-        initialCloud.style.top = '50px';
-        initialCloud.style.left = '400px';
-        container.appendChild(initialCloud);
-        clouds.push({ element: initialCloud, x: 400 });
-
-    </script>
-</body>
-</html>
+                    right: obsRect.right - 8
