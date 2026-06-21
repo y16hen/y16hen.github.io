@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小恐龍雄女ver.</title>
+    <title>我的專屬自訂跑酷遊戲</title>
     <style>
         body {
             display: flex;
@@ -54,7 +54,7 @@
             animation: scrollGround 3s linear infinite;
         }
 
-        /* 💡 主角基礎設定：這裡幫你放大成 130px * 195px */
+        /* 主角基礎設定（維持你滿意的大小） */
         #dino {
             position: absolute;
             bottom: 40px; 
@@ -71,10 +71,10 @@
         #dino.run-pose-1 { background-image: url('run1.png'); }
         #dino.run-pose-2 { background-image: url('run2.png'); }
 
-        /* 💡 躺平形態：寬度維持 130px，高度配合等比例放大為 124px */
+        /* 💡 躺平形態再放大！變成超巨大的 170px * 162px */
         #dino.duck {
-            width: 130px;
-            height: 124px; 
+            width: 170px;
+            height: 162px; 
             background-image: url('duck.png') !important; 
         }
 
@@ -87,18 +87,18 @@
             z-index: 15;
         }
 
-        /* 書本貼齊最底端 */
+        /* 💡 書本縮小：調整為 60px * 70px */
         .book {
             position: absolute;
             bottom: 0;     
-            width: 85px;  
-            height: 100px; 
+            width: 60px;  
+            height: 70px; 
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center bottom;
         }
 
-        /* 💡 飛機縮小：這裡縮小為 70px * 43px */
+        /* 飛機（維持上次縮小後的大小） */
         .paper-plane {
             position: absolute;
             width: 70px;  
@@ -108,10 +108,10 @@
             background-repeat: no-repeat;
             background-position: center center;
         }
-        /* 💡 因應主角放大，微調了飛機高度讓難易度更合理 */
-        .paper-plane.high { bottom: 165px; } /* 需要站著或跳躍躲避 */
-        .paper-plane.mid { bottom: 95px; }   /* 需要蹲下躲避 */
-        .paper-plane.low { bottom: 0px; }    /* 需要跳躍躲避 */
+        /* 飛機高度配合同步微調 */
+        .paper-plane.high { bottom: 165px; } 
+        .paper-plane.mid { bottom: 105px; } /* 稍微拉高一點點，留空間給變大後的躺平主角 */
+        .paper-plane.low { bottom: 0px; }    
 
         #score {
             position: absolute;
@@ -354,8 +354,8 @@
                     bookElement.style.backgroundImage = `url('book${bookNum}.png')`;
                     
                     obstacleContainer.appendChild(bookElement);
-                    // 這裡的寬高也要與上面 CSS 保持一致 (書本沒變維持 85, 100)
-                    obstacles.push({ element: bookElement, x: 800, width: 85, height: 100, type: 'book' });
+                    // 💡 JavaScript 裡的書本碰撞判定同步改為縮小後的 60 * 70
+                    obstacles.push({ element: bookElement, x: 800, width: 60, height: 70, type: 'book' });
                 } else if (obstacleType === 'plane') {
                     const planeElement = document.createElement('div');
                     planeElement.classList.add('paper-plane');
@@ -363,7 +363,6 @@
                     planeElement.classList.add(planeLevels[Math.floor(Math.random() * planeLevels.length)]);
                     planeElement.style.left = '800px';
                     obstacleContainer.appendChild(planeElement);
-                    // 💡 這裡的碰撞判定寬高同步修改為小飛機尺寸 (70, 43)
                     obstacles.push({ element: planeElement, x: 800, width: 70, height: 43, type: 'plane' });
                 }
 
@@ -373,20 +372,25 @@
 
         function checkCollisions() {
             const dinoRect = dino.getBoundingClientRect();
-            // 💡 主角變大後，碰撞範圍有稍微往內縮一些，讓判定比較寬容、好過關
+            
+            // 💡 為了配合巨型躺平狀態（寬度變寬），把左右碰撞邊界往內縮，讓判定變寬容
+            // 這樣雖然看起來很大隻，但不會因為圖片變寬而超容易被擦邊撞死
+            const paddingX = isDucking ? 45 : 35;
+            const paddingTop = isDucking ? 45 : 30;
+
             const dinoCollision = {
-                left: dinoRect.left + 35,
-                right: dinoRect.right - 35,
-                top: dinoRect.top + 30,
+                left: dinoRect.left + paddingX,
+                right: dinoRect.right - paddingX,
+                top: dinoRect.top + paddingTop,
                 bottom: dinoRect.bottom - 10
             };
 
             for (let obs of obstacles) {
                 const obsRect = obs.element.getBoundingClientRect();
                 const obsCollision = {
-                    left: obsRect.left + 10,
-                    right: obsRect.right - 10,
-                    top: obsRect.top + 10,
+                    left: obsRect.left + 8,
+                    right: obsRect.right - 8,
+                    top: obsRect.top + 8,
                     bottom: obsRect.bottom - 5
                 };
 
